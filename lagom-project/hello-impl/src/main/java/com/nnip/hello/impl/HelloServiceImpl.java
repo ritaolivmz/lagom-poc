@@ -4,78 +4,97 @@
 package com.nnip.hello.impl;
 
 import akka.NotUsed;
+import akka.japi.Pair;
+import akka.stream.javadsl.Source;
 import com.lightbend.lagom.javadsl.api.ServiceCall;
 import com.lightbend.lagom.javadsl.api.broker.Topic;
+import com.lightbend.lagom.javadsl.broker.TopicProducer;
+import com.lightbend.lagom.javadsl.persistence.AggregateEventTag;
+import com.lightbend.lagom.javadsl.persistence.Offset;
 import com.lightbend.lagom.javadsl.persistence.PersistentEntityRef;
 import com.lightbend.lagom.javadsl.persistence.PersistentEntityRegistry;
 
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-
 import javax.inject.Inject;
-import com.nnip.hello.api.GreetingMessage;
-import com.nnip.hello.api.HelloService;
-import com.nnip.hello.impl.HelloCommand.*;
 
+import com.nnip.hello.api.Greeting;
+import com.nnip.hello.api.GreetingEvent;
+import com.nnip.hello.api.HelloService;
+
+import java.util.Optional;
 
 /**
  * Implementation of the HelloService.
  */
 public class HelloServiceImpl implements HelloService {
 
-  private final PersistentEntityRegistry persistentEntityRegistry;
+  private final PersistentEntityRegistry registry;
 
   @Inject
-  public HelloServiceImpl(PersistentEntityRegistry persistentEntityRegistry) {
-    this.persistentEntityRegistry = persistentEntityRegistry;
-    persistentEntityRegistry.register(HelloEntity.class);
+  public HelloServiceImpl(PersistentEntityRegistry registry) {
+    this.registry = registry;
+
+    registry.register(GreetingEntity.class);
+
+    // TODO Subscribe to the events from the event service.
+//    itemService.itemEvents().subscribe().atLeastOnce(Flow.<ItemEvent>create().mapAsync(1, itemEvent -> {
+//      if (itemEvent instanceof ItemEvent.AuctionStarted) {
+//        ItemEvent.AuctionStarted auctionStarted = (ItemEvent.AuctionStarted) itemEvent;
+//        Auction auction = new Auction(auctionStarted.getItemId(), auctionStarted.getCreator(),
+//                auctionStarted.getReservePrice(), auctionStarted.getIncrement(), auctionStarted.getStartDate(),
+//                auctionStarted.getEndDate());
+//
+//        return entityRef(auctionStarted.getItemId()).ask(new AuctionCommand.StartAuction(auction));
+//      } else if (itemEvent instanceof ItemEvent.AuctionCancelled) {
+//        return entityRef(itemEvent.getItemId()).ask(AuctionCommand.CancelAuction.INSTANCE);
+//      } else {
+//        return CompletableFuture.completedFuture(Done.getInstance());
+//      }
+//    }));
   }
 
   @Override
-  public ServiceCall<NotUsed, String> hello(String id) {
+  public ServiceCall<NotUsed, Greeting> placeGreeting(String greeting) {
     return request -> {
-      // Look up the hello world entity for the given ID.
-      PersistentEntityRef<HelloCommand> ref = persistentEntityRegistry.refFor(HelloEntity.class, id);
-      // Ask the entity the Hello command.
-      return ref.ask(new Hello(id, Optional.empty()));
-    };
-  }
-
-  @Override
-  public ServiceCall<String, String> displayHelloMsg(String userId) {
-    return request -> CompletableFuture.completedFuture("BOM DIA");
-  }
-
-  @Override
-  public ServiceCall<NotUsed, String> test(String id, String msg) {
-    return request -> {
-      // Look up the hello world entity for the given ID.
-      PersistentEntityRef<HelloCommand> ref = persistentEntityRegistry.refFor(HelloEntity.class, id);
-      // Ask the entity the Hello command.
-      return ref.ask(new Test(msg, id));
+      GreetingCommand.AddGreeting placeGreeting = new GreetingCommand.AddGreeting(greeting);
+      return entityRef(greeting).ask(placeGreeting).thenApply(result ->
+              new Greeting(result.getGreeting()));
     };
   }
 
   /*@Override
-  public ServiceCall<NotUsed, PrettyPrinter.Item> useGreeting(String greeting, String id) {
+  public ServiceCall<NotUsed, PSequence<Greeting>> getGreetings() {
     return request -> {
-      // Look up the hello world entity for the given ID.
-      PersistentEntityRef<HelloCommand> ref = persistentEntityRegistry.refFor(HelloEntity.class, id);
-      // Ask the entity the Hello command.
-      return ref.ask(new UseGreetingMessage(id));
+      return entityRef(itemId).ask(GreetingCommand.GetGreeting.INSTANCE).thenApply(greet -> {
+        List<Greeting> greetings = greet.getGreeting().stream()
+                .map(this::convertBid)
+                .collect(Collectors.toList());
+        return TreePVector.from(greetings);
+      });
     };
   }*/
 
-  @Override
-  public ServiceCall<GreetingMessage, String> useGreeting(String greeting, String id) {
-    return request -> {
-      // Look up the hello world entity for the given ID.
-      PersistentEntityRef<HelloCommand> ref = persistentEntityRegistry.refFor(HelloEntity.class, id);
-      // Tell the entity to use the greeting message specified.
-      return ref.ask(new UseGreetingMessage(request.message));
-    };
-
+  private PersistentEntityRef<GreetingCommand> entityRef(String greeting) {
+    return registry.refFor(GreetingEntity.class, greeting);
   }
 
+  @Override
+  public Topic<GreetingEvent> greetingsEvents() {
+    return TopicProducer.taggedStreamWithOffset(GreetingEvent.TAG.allTags(), this::streamForTag);
+  }
+
+  private Source<Pair<GreetingEvent, Offset>, ?> streamForTag(AggregateEventTag<GreetingEvent> tag, Offset offset) {
+    return registry.eventStream(tag, offset).filter(eventOffset ->
+            eventOffset.first() instanceof GreetingEvent.GreetingPlaced);
+  }
+
+  @Override
+  public ServiceCall<NotUsed, String> hello(String msg) {
+    return request -> {
+      // Look up the hello world entity for the given ID.
+      PersistentEntityRef<GreetingCommand> ref = registry.refFor(GreetingEntity.class, msg);
+      // Ask the entity the Hello command.
+      return ref.ask(new Greeting(msg));
+    };
+  }
 
 }

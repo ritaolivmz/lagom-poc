@@ -3,14 +3,14 @@
  */
 package com.nnip.msg.impl;
 
-import javax.annotation.Nullable;
-import javax.annotation.concurrent.Immutable;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Preconditions;
+import com.lightbend.lagom.javadsl.persistence.AggregateEvent;
+import com.lightbend.lagom.javadsl.persistence.AggregateEventTag;
 import com.lightbend.lagom.serialization.Jsonable;
+import com.lightbend.lagom.javadsl.immutable.ImmutableStyle;
+
+import org.immutables.value.Value;
+import java.time.Instant;
 
 /**
  * This interface defines all the events that the Hello entity supports.
@@ -18,11 +18,29 @@ import com.lightbend.lagom.serialization.Jsonable;
  * By convention, the events should be inner classes of the interface, which
  * makes it simple to get a complete picture of what events an entity has.
  */
-public interface MsgEvent extends Jsonable {
+public interface MsgEvent extends Jsonable, AggregateEvent<MsgEvent> {
 
-  /**
+  @Value.Immutable
+  @ImmutableStyle
+  @JsonDeserialize
+  interface AbstractOrderCreated extends MsgEvent {
+    @Override
+    default AggregateEventTag<MsgEvent> aggregateTag() {
+      return MsgEventTag.INSTANCE;
+    }
+
+    @Value.Parameter
+    MsgCommand.Msg getMsg();
+
+    @Value.Default
+    default Instant getTimestamp() {
+      return Instant.now();
+    }
+  }
+
+/*  *//**
    * An event that represents a change in greeting message.
-   */
+   *//*
   @SuppressWarnings("serial")
   @Immutable
   @JsonDeserialize
@@ -56,5 +74,5 @@ public interface MsgEvent extends Jsonable {
     public String toString() {
       return MoreObjects.toStringHelper("MessageChanged").add("message", message).toString();
     }
-  }
+  }*/
 }

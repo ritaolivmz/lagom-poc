@@ -8,8 +8,6 @@ import java.util.Optional;
 
 import com.lightbend.lagom.javadsl.persistence.PersistentEntity;
 
-import com.nnip.msg.impl.MsgEvent.MessageChanged;
-
 /**
  * This is an event sourced entity. It has a state, {@link MsgState}, which
  * stores what the greeting should be (eg, "Hello").
@@ -25,7 +23,7 @@ import com.nnip.msg.impl.MsgEvent.MessageChanged;
  * loaded from the database - each event will be replayed to recreate the state
  * of the entity.
  * <p>
- * This entity defines one event, the {@link MessageChanged} event,
+ * This entity defines one event, the {@link} event,
  */
 public class MsgEntity extends PersistentEntity<MsgCommand, MsgEvent, MsgState> {
 
@@ -51,10 +49,10 @@ public class MsgEntity extends PersistentEntity<MsgCommand, MsgEvent, MsgState> 
     /*
      * Event handler for the GreetingMessageChanged event.
      */
-    b.setEventHandler(MessageChanged.class,
+    /*b.setEventHandler(MessageChanged.class,
         // We simply update the current state to use the greeting message from
         // the event.
-        evt -> new MsgState(evt.message, LocalDateTime.now().toString()));
+        evt -> new MsgState(evt.message, LocalDateTime.now().toString()));*/
 
     b.setReadOnlyCommandHandler(MsgCommand.Msg.class,
             // Get the greeting from the current state, and prepend it to the name

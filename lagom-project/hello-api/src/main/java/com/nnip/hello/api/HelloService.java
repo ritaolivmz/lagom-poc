@@ -10,6 +10,7 @@ import akka.NotUsed;
 import com.lightbend.lagom.javadsl.api.Descriptor;
 import com.lightbend.lagom.javadsl.api.Service;
 import com.lightbend.lagom.javadsl.api.ServiceCall;
+import com.lightbend.lagom.javadsl.api.broker.Topic;
 
 /**
  * The Hello service interface.
@@ -19,30 +20,33 @@ import com.lightbend.lagom.javadsl.api.ServiceCall;
  */
 public interface HelloService extends Service {
 
-  /**
-   * Example: curl http://localhost:9000/api/hello/Alice
-   */
   ServiceCall<NotUsed, String> hello(String id);
 
-  ServiceCall<NotUsed, String> test(String id, String msg);
-
-  ServiceCall<String, String> displayHelloMsg(String id);
+  /**
+   * Place a greeting.
+   */
+  ServiceCall<NotUsed, Greeting> placeGreeting(String greeting);
 
   /**
-   * Example: curl -H "Content-Type: application/json" -X POST -d '{"message":
-   * "Hi"}' http://localhost:9000/api/hello/Alice
+   * Get all of the greetings.
    */
-  ServiceCall<GreetingMessage, String> useGreeting(String greeting, String id);
+  /*ServiceCall<NotUsed, PSequence<Greeting>> getGreetings();*/
+
+  /**
+   * The greeting events topic.
+   */
+  Topic<GreetingEvent> greetingsEvents();
+
+  String TOPIC_ID = "hello-GreetingEvent";
 
   @Override
   default Descriptor descriptor() {
-    // @formatter:off
     return named("hello").withCalls(
-        pathCall("/api/hello/:id",  this::hello),
-            pathCall("/api/greet/:id",  this::displayHelloMsg),
-        pathCall("/api/hello/:greeting/greeting/:id", this::useGreeting),
-            pathCall("/api/test/:id/:msg", this::test)
-      ).withAutoAcl(true);
-    // @formatter:on
+            pathCall("/api/hello/:id",  this::hello),
+            pathCall("/api/hello/add/:greeting", this::placeGreeting)
+            /*pathCall("/api/greet/greetings", this::getGreetings)*/
+    ).publishing(
+            Service.topic(TOPIC_ID, this::greetingsEvents)
+    ).withAutoAcl(true);
   }
 }
