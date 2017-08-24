@@ -57,7 +57,7 @@ public class HelloServiceImpl implements HelloService {
     return request -> {
       GreetingCommand.AddGreeting placeGreeting = new GreetingCommand.AddGreeting(greeting);
       return entityRef(greeting).ask(placeGreeting).thenApply(result ->
-              new Greeting(result.getGreeting()));
+              new Greeting(result.getOutputMessage()));
     };
   }
 
@@ -93,7 +93,7 @@ public class HelloServiceImpl implements HelloService {
       // Look up the hello world entity for the given ID.
       PersistentEntityRef<GreetingCommand> ref = registry.refFor(GreetingEntity.class, msg);
       // Ask the entity the Hello command.
-      return ref.ask(new Greeting(msg));
+      return ref.ask(new GreetingCommand.Greeting(msg));
     };
   }
 
