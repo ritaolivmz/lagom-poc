@@ -6,6 +6,7 @@ package com.nnip.msg.impl;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import akka.Done;
 import com.lightbend.lagom.javadsl.persistence.PersistentEntity;
 
 /**
@@ -58,7 +59,9 @@ public class MsgEntity extends PersistentEntity<MsgCommand, MsgEvent, MsgState> 
             // Get the greeting from the current state, and prepend it to the name
             // that we're sending
             // a greeting to, and reply with that message.
-            (cmd, ctx) -> ctx.reply(state().message + ", " + cmd.helloMsg + " !!"));
+            /*(cmd, ctx) -> ctx.reply(state().message + ", " + cmd.helloMsg + " !!"));*/
+            (cmd, ctx) -> ctx.reply(Done.getInstance())
+    );
 
     /*
      * We've defined all our behaviour, so build and return it.

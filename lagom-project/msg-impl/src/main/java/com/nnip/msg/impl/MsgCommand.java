@@ -6,12 +6,14 @@ package com.nnip.msg.impl;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 
+import akka.Done;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.lightbend.lagom.javadsl.persistence.PersistentEntity;
 import com.lightbend.lagom.serialization.Jsonable;
+import com.nnip.hello.api.Greeting;
 
 /**
  * This interface defines all the commands that the Hello entity supports.
@@ -31,7 +33,7 @@ public interface MsgCommand extends Jsonable {
   @SuppressWarnings("serial")
   @Immutable
   @JsonDeserialize
-  public final class Msg implements MsgCommand, PersistentEntity.ReplyType<String> {
+  public final class Msg implements MsgCommand, PersistentEntity.ReplyType<Done> {
     public final String message;
     public final String helloMsg;
 

@@ -1,7 +1,8 @@
+package com.nnip.hello.impl;
+
 /*
  * Copyright (C) 2016-2017 Lightbend Inc. <https://www.lightbend.com>
- */
-package com.nnip.hello.impl;
+ *//*
 
 import akka.NotUsed;
 import akka.japi.Pair;
@@ -19,12 +20,19 @@ import javax.inject.Inject;
 import com.nnip.hello.api.Greeting;
 import com.nnip.hello.api.GreetingEvent;
 import com.nnip.hello.api.HelloService;
+import org.pcollections.PSequence;
+import org.pcollections.TreePVector;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
+*/
 /**
  * Implementation of the HelloService.
- */
+ *//*
+
 public class HelloServiceImpl implements HelloService {
 
   private final PersistentEntityRegistry registry;
@@ -34,22 +42,6 @@ public class HelloServiceImpl implements HelloService {
     this.registry = registry;
 
     registry.register(GreetingEntity.class);
-
-    // TODO Subscribe to the events from the event service.
-//    itemService.itemEvents().subscribe().atLeastOnce(Flow.<ItemEvent>create().mapAsync(1, itemEvent -> {
-//      if (itemEvent instanceof ItemEvent.AuctionStarted) {
-//        ItemEvent.AuctionStarted auctionStarted = (ItemEvent.AuctionStarted) itemEvent;
-//        Auction auction = new Auction(auctionStarted.getItemId(), auctionStarted.getCreator(),
-//                auctionStarted.getReservePrice(), auctionStarted.getIncrement(), auctionStarted.getStartDate(),
-//                auctionStarted.getEndDate());
-//
-//        return entityRef(auctionStarted.getItemId()).ask(new AuctionCommand.StartAuction(auction));
-//      } else if (itemEvent instanceof ItemEvent.AuctionCancelled) {
-//        return entityRef(itemEvent.getItemId()).ask(AuctionCommand.CancelAuction.INSTANCE);
-//      } else {
-//        return CompletableFuture.completedFuture(Done.getInstance());
-//      }
-//    }));
   }
 
   @Override
@@ -61,20 +53,30 @@ public class HelloServiceImpl implements HelloService {
     };
   }
 
-  /*@Override
+*/
+/*  @Override
   public ServiceCall<NotUsed, PSequence<Greeting>> getGreetings() {
     return request -> {
-      return entityRef(itemId).ask(GreetingCommand.GetGreeting.INSTANCE).thenApply(greet -> {
-        List<Greeting> greetings = greet.getGreeting().stream()
+      return entityRef().ask(GreetingCommand.GetGreeting.INSTANCE).thenApply(greet -> {
+        List<Greeting> bids = greet.getBiddingHistory().stream()
                 .map(this::convertBid)
                 .collect(Collectors.toList());
-        return TreePVector.from(greetings);
+        return TreePVector.from(bids);
       });
     };
-  }*/
+  }*//*
+
+
+  private PersistentEntityRef<GreetingCommand> entityRef() {
+    return registry.refFor(GreetingEntity.class, "all");
+  }
 
   private PersistentEntityRef<GreetingCommand> entityRef(String greeting) {
     return registry.refFor(GreetingEntity.class, greeting);
+  }
+
+  public ServiceCall<NotUsed, PSequence<Greeting>> getGreetings() {
+    return null;
   }
 
   @Override
@@ -97,4 +99,62 @@ public class HelloServiceImpl implements HelloService {
     };
   }
 
+}
+*/
+
+import akka.Done;
+import akka.NotUsed;
+import akka.japi.Pair;
+import com.lightbend.lagom.javadsl.api.ServiceCall;
+import com.lightbend.lagom.javadsl.api.broker.Topic;
+import com.lightbend.lagom.javadsl.broker.TopicProducer;
+import com.lightbend.lagom.javadsl.persistence.Offset;
+import com.lightbend.lagom.javadsl.persistence.PersistentEntityRef;
+import com.lightbend.lagom.javadsl.persistence.PersistentEntityRegistry;
+import com.nnip.hello.api.GreetingMessage;
+import com.nnip.hello.api.HelloService;
+
+import javax.inject.Inject;
+import java.util.Optional;
+
+public class HelloServiceImpl implements HelloService {
+
+
+  private final PersistentEntityRegistry persistentEntityRegistry;
+
+  @Inject
+  public HelloServiceImpl(PersistentEntityRegistry persistentEntityRegistry) {
+    this.persistentEntityRegistry = persistentEntityRegistry;
+    persistentEntityRegistry.register(HelloGreeting.class);
+  }
+
+  @Override
+  public ServiceCall<NotUsed, String> hello(String id) {
+    System.out.println("\nHere is the hello()");
+    return request -> {
+      PersistentEntityRef<HelloCommand> ref = persistentEntityRegistry.refFor(HelloGreeting.class, id);
+      return ref.ask(new HelloCommand.Hello(id, Optional.empty()));
+    };
+  }
+
+  @Override
+  public ServiceCall<GreetingMessage, Done> useGreeting(String id) {
+    System.out.println("\nHere is the useGreeting()");
+    return request -> {
+      PersistentEntityRef<HelloCommand> ref = persistentEntityRegistry.refFor(HelloGreeting.class, id);
+      System.out.println("\nref: "+ref.toString());
+      return ref.ask(new HelloCommand.UseGreetingMessage(request.message));
+    };
+
+  }
+
+  @Override
+  public Topic<GreetingMessage> greetingsTopic() {
+    return TopicProducer.singleStreamWithOffset(offset -> persistentEntityRegistry.eventStream(HelloEventTag.INSTANCE, offset)
+            .map(this::convertEvent));
+  }
+
+  private Pair<GreetingMessage, Offset> convertEvent(Pair<HelloEvent, Offset> pair) {
+    return new Pair<>(new GreetingMessage(pair.first().getMessage()), pair.second());
+  }
 }

@@ -16,10 +16,13 @@ import javax.inject.Inject;
 import com.lightbend.lagom.javadsl.pubsub.PubSubRef;
 import com.lightbend.lagom.javadsl.pubsub.PubSubRegistry;
 import com.lightbend.lagom.javadsl.pubsub.TopicId;
+import com.nnip.hello.api.Greeting;
+import com.nnip.hello.api.GreetingEvent;
 import com.nnip.hello.api.HelloService;
 import com.nnip.msg.api.MsgService;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -37,6 +40,23 @@ public class MsgServiceImpl implements MsgService {
     persistentEntityRegistry.register(MsgEntity.class);
     this.helloService = helloService;
     this.pubSubRegistry = topics;
+
+    this.helloService.greetingsEvents().subscribe().atLeastOnce(Flow.<GreetingEvent>create().mapAsync(1, this::handleGreetingEvent));
+  }
+
+  private CompletionStage<Done> handleGreetingEvent(GreetingEvent event) {
+    if (event instanceof GreetingEvent.GreetingPlaced) {
+      GreetingEvent.GreetingPlaced greetingPlaced = (GreetingEvent.GreetingPlaced) event;
+      return entityRef(greetingPlaced.getGreeting().getGreeting())
+              .ask(new MsgCommand.Msg(greetingPlaced.getGreeting().getGreeting(), "test text"));
+    } else {
+      // Ignore.
+      return CompletableFuture.completedFuture(Done.getInstance());
+    }
+  }
+
+  private PersistentEntityRef<MsgCommand> entityRef(String greeting) {
+    return persistentEntityRegistry.refFor(MsgEntity.class, greeting);
   }
 
   /*@Override
