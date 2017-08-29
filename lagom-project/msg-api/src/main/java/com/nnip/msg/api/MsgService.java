@@ -3,6 +3,7 @@
  */
 package com.nnip.msg.api;
 
+import akka.Done;
 import akka.NotUsed;
 import akka.stream.javadsl.Source;
 import com.lightbend.lagom.javadsl.api.Descriptor;
@@ -20,16 +21,13 @@ import static com.lightbend.lagom.javadsl.api.Service.pathCall;
  */
 public interface MsgService extends Service {
 
-  /*ServiceCall<NotUsed, String> msg(String msg);*/
-
-  ServiceCall<NotUsed, Source<String, ?>> retrieveMsg(String msg);
+  ServiceCall<NotUsed, GreetingMessage> displayLastMessage();
 
   @Override
   default Descriptor descriptor() {
     // @formatter:off
     return named("msg").withCalls(
-        /*pathCall("/api/msg/:msg",  this::msg),*/
-            pathCall("/api/msg/hello/:msg",  this::retrieveMsg)
+            pathCall("/api/msg/displayMessage",  this::displayLastMessage)
       ).withAutoAcl(true);
     // @formatter:on
   }

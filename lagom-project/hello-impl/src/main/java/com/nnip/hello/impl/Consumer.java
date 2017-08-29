@@ -15,8 +15,8 @@ public class Consumer {
 
   @Inject public Consumer(HelloService helloService) {
     this.helloService = helloService;
-    this.helloService.greetingsTopic().subscribe()
-        .atLeastOnce(Flow.fromFunction(this::displayMessage));
+    /*this.helloService.greetingsTopic().subscribe()
+        .atLeastOnce(Flow.fromFunction(this::displayMessage));*/
   }
 
   private Done displayMessage(GreetingMessage message) {

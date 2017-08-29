@@ -12,8 +12,8 @@
     <modules>
         <module>hello-api</module>
         <module>hello-impl</module>
-<!--        <module>msg-api</module>
-        <module>msg-impl</module>-->
+        <module>msg-api</module>
+        <module>msg-impl</module>
         <module>stream-api</module>
         <module>stream-impl</module>
         <module>integration-tests</module>
