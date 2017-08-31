@@ -21,7 +21,7 @@ import static com.lightbend.lagom.javadsl.api.Service.pathCall;
  */
 public interface MsgService extends Service {
 
-  ServiceCall<NotUsed, GreetingMessage> displayLastMessage();
+  ServiceCall<NotUsed, String> displayLastMessage();
 
   @Override
   default Descriptor descriptor() {

@@ -5,6 +5,7 @@ package com.nnip.msg.impl;
 
 import akka.Done;
 import akka.NotUsed;
+import akka.japi.Pair;
 import akka.stream.javadsl.Flow;
 
 import javax.inject.Inject;
@@ -14,6 +15,7 @@ import com.nnip.hello.api.GreetingMessage;
 import com.nnip.hello.api.HelloService;
 import com.nnip.msg.api.MsgService;
 
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Implementation of the HelloService.
@@ -37,25 +39,12 @@ public class MsgServiceImpl implements MsgService {
   }
 
   @Override
-  public ServiceCall<NotUsed, com.nnip.msg.api.GreetingMessage> displayLastMessage() {
+  public ServiceCall<NotUsed, String> displayLastMessage() {
     System.out.println("[MSG WS] Last Message :  " + lastMessage);
 
-    return null;
-  }
-  /*  return request -> {
-      com.nnip.msg.api.GreetingMessage greetingMessage = new com.nnip.msg.api.GreetingMessage(lastMessage);
-      return entityRef(uuid)
-              .ask(new PUserCommand.CreatePUser(user.getName(), user.getEmail(), password))
-              .thenApply(done -> Mappers.toApi(Optional.ofNullable(createdUser)));
+    return request -> {
+      return CompletableFuture.completedFuture("Bom dia, " + this.helloService.getPublishedGreeting().invoke(lastMessage));
     };
   }
-
-  private PersistentEntityRef<PUserCommand> entityRef(UUID id) {
-    return entityRef(id.toString());
-  }
-
-  private PersistentEntityRef<PUserCommand> entityRef(String id) {
-    return registry.refFor(PUserEntity.class, id);
-  }*/
 
 }

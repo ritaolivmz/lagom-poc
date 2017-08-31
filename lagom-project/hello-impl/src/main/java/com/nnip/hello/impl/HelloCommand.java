@@ -86,4 +86,15 @@ public interface HelloCommand extends Jsonable {
         }
     }
 
+    @SuppressWarnings("serial")
+    @Immutable
+    @JsonDeserialize
+    final class GetGreeting implements HelloCommand, PersistentEntity.ReplyType<String> {
+        private final String greeting;
+
+        @JsonCreator
+        public GetGreeting(String greeting) {
+            this.greeting = greeting;
+        }
+    }
 }
