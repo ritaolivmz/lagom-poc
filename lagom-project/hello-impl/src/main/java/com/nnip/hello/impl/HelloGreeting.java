@@ -24,6 +24,13 @@ public class HelloGreeting extends PersistentEntity<HelloCommand, HelloEvent, Wo
         b.setReadOnlyCommandHandler(HelloCommand.Hello.class,
                 (cmd, ctx) -> ctx.reply(state().message + ", " + cmd.name + "!"));
 
+        b.setReadOnlyCommandHandler(HelloCommand.GetGreeting.class,
+                (cmd, ctx) -> {
+                    System.out.println("[HELLO WS] Command handler : "+cmd.getGreeting());
+                    ctx.reply(cmd.getGreeting());
+                    }
+                );
+
         return b.build();
     }
 

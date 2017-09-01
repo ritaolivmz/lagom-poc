@@ -32,6 +32,7 @@ public class MsgServiceImpl implements MsgService {
             .atLeastOnce(Flow.fromFunction(this::displayMessage));
   }
 
+
   private Done displayMessage(GreetingMessage message) {
     System.out.println("[MSG WS] Message :  " + message);
     this.lastMessage = message.message;

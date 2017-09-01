@@ -51,6 +51,8 @@ public class HelloServiceImpl implements HelloService {
     System.out.println("[HELLO WS] getPublishedGreeting invoked");
     return (request -> {
       System.out.println("[HELLO WS] id is : "+request);
+      System.out.println("TEST RESULT: "+entityRef(request)
+              .ask(new HelloCommand.GetGreeting(request)));
       return entityRef(request)
               .ask(new HelloCommand.GetGreeting(request));
     });
@@ -72,8 +74,4 @@ public class HelloServiceImpl implements HelloService {
     return persistentEntityRegistry.refFor(HelloGreeting.class, id);
   }
 
-  @Override
-  public String toString() {
-    return "Hello WS has been invoked!";
-  }
 }

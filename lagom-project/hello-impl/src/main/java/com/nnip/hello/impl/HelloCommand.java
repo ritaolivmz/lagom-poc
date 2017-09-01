@@ -96,5 +96,9 @@ public interface HelloCommand extends Jsonable {
         public GetGreeting(String greeting) {
             this.greeting = greeting;
         }
+
+        public String getGreeting() {
+            return greeting;
+        }
     }
 }
